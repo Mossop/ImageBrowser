@@ -89,6 +89,31 @@ var ImageBrowser = {
 		mDisplayPanel.setFolder(mFolder);
 	},
 	
+	thumbnailCallback: function(image, callback)
+	{
+		var canvas = document.getElementById("thumbnail-canvas");
+		if (image.width > image.height)
+		{
+			canvas.width = 100;
+			canvas.height = (image.height / image.width) * 100;
+		}
+		else
+		{
+			canvas.height = 100;
+			canvas.width = (image.width / image.height) * 100;
+		}
+		var ctx = canvas.getContext("2d");
+		ctx.drawImage(image, 0, 0, image.width, image.height, 0, 0, canvas.width, canvas.height);
+		callback(canvas.toDataURL(), canvas.width, canvas.height);
+	},
+	
+	loadThumbnailForURI: function(uri, callback)
+	{
+		var image = new Image();
+		image.src = uri;
+		image.onload = function() { ImageBrowser.thumbnailCallback(image, callback); };
+	},
+	
 	toggleFolderList: function()
 	{
 		var tree = document.getElementById("folder-tree");

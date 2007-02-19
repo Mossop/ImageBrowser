@@ -54,7 +54,8 @@
 	</menupopup>
 	
 	<deck id="display-deck" selectedIndex="0" persist="selectedIndex">
-		<scrollbox id="thumbnailgrid-panel"/>
+		<scrollbox id="thumbnailgrid-panel" flex="1"
+		           style="overflow: auto; -moz-binding: url(chrome://imagebrowser/content/viewers/thumbnailgrid/panel.xml#panel)"/>
 	</deck>
 	
 </overlay>
