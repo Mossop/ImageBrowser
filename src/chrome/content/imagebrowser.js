@@ -42,6 +42,9 @@
  *
  */
 
+var mDisplayPanel = null;
+var mFolder = null;
+
 function openWindowByType(inType, uri, features)
 {
   var windowManager = Components.classes['@mozilla.org/appshell/window-mediator;1'].getService();
@@ -60,14 +63,30 @@ var ImageBrowser = {
 	init: function(event)
 	{
 		var display = document.getElementById("display-deck");
-		var panel = display.selectedPanel;
-		var type = panel.id.substring(0, panel.id.length-6);
+		mDisplayPanel = display.selectedPanel;
+		var type = mDisplayPanel.id.substring(0, mDisplayPanel.id.length-6);
 		var menu = document.getElementById(type+"-menuitem");
 		menu.setAttribute("checked", "true");
 
 		var tree = document.getElementById("folder-tree");
 		menu = document.getElementById("folderlist-menuitem");
 		menu.setAttribute("checked", tree.hidden ? "false" : "true");
+		
+		if ("initialise" in mDisplayPanel)
+			mDisplayPanel.initialise();
+		mDisplayPanel.setFolder(mFolder);
+	},
+	
+	onFolderSelect: function()
+	{
+		var tree = document.getElementById("folder-tree");
+		var view = tree.view.QueryInterface(Components.interfaces.nsIXULTreeBuilder);
+		var ios = Components.classes["@mozilla.org/network/io-service;1"]
+                        .getService(Components.interfaces.nsIIOService);
+    var fph = ios.getProtocolHandler("file")
+                 .QueryInterface(Components.interfaces.nsIFileProtocolHandler);
+		mFolder = fph.getFileFromURLSpec(view.getResourceAtIndex(tree.currentIndex).Value);
+		mDisplayPanel.setFolder(mFolder);
 	},
 	
 	toggleFolderList: function()
@@ -81,7 +100,6 @@ var ImageBrowser = {
 	
 	showAbout: function()
 	{
-		alert('about');
 	},
 	
 	showOptions: function(paneID)
@@ -108,6 +126,9 @@ var ImageBrowser = {
 	
 	changeDisplay: function(type)
 	{
+		if ("destroy" in mDisplayPanel)
+			mDisplayPanel.destroy();
+
 		var menu = document.getElementById("viewtypes-separator");
 		menu = menu.nextSibling;
 		while (menu)
@@ -116,8 +137,12 @@ var ImageBrowser = {
 			menu = menu.nextSibling;
 		}
 		var display = document.getElementById("display-deck");
-		var panel = document.getElementById(type+"-panel");
-		display.selectedPanel = panel;
+		mDisplayPanel = document.getElementById(type+"-panel");
+		display.selectedPanel = mDisplayPanel;
+		
+		if ("initialise" in mDisplayPanel)
+			mDisplayPanel.initialise();
+		mDisplayPanel.setFolder(mFolder);
 	}
 };
 

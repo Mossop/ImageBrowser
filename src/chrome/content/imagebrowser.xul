@@ -82,15 +82,23 @@
 	  </menu>
 	  <menu id="tools-menu" label="&tools-menu.label;">
 	    <menupopup id="tools-popup">
+	    	<menuitem label="&addons-menuitem.label;"
+	    	          oncommand="openWindowByType('Extension:Manager', 'chrome://mozapps/content/extensions/extensions.xul')"/>
 	    	<menuitem label="&console-menuitem.label;"
 	    	          oncommand="openWindowByType('global:console', 'chrome://global/content/console.xul')"/>
+	    	<menuitem label="&inspector-menuitem.label;"
+	    	          oncommand="window.openDialog('chrome://inspector/content/', '_blank', 'chrome,all,dialog=no')"/>
+	    	<menuitem label="&config-menuitem.label;"
+	    	          oncommand="window.openDialog('chrome://global/content/config.xul', '_blank', 'chrome,all,dialog=no')"/>
 	    </menupopup>
 	  </menu>
 	</menubar>
 
 	<hbox flex="1">
-	  <tree id="folder-tree" datasources="rdf:files" ref="file:///Users" width="200" persist="width hidden"
-	        flags="dont-build-content" hidecolumnpicker="true">
+	  <tree id="folder-tree" datasources="rdf:files" ref="file:///Users"
+	        width="200" persist="width hidden"
+	        flags="dont-build-content" hidecolumnpicker="true" seltype="single"
+	        onselect="ImageBrowser.onFolderSelect()">
 	    <treecols>
 	      <treecol id="name" label="Name" primary="true" flex="1"/>
 	    </treecols>
