@@ -4,6 +4,8 @@
 <!ENTITY quit-menuitem.label               "Quit">
 
 <!ENTITY view-menu.label                   "View">
+<!ENTITY folderlist-menuitem.label         "Folder List">
+
 <!ENTITY tools-menu.label                  "Tools">
 <!ENTITY console-menuitem.label            "Error Console">
 

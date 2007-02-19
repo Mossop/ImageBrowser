@@ -74,6 +74,10 @@
 	  </menu>
 	  <menu id="view-menu" label="&view-menu.label;">
 	    <menupopup id="view-popup">
+	    	<menuitem id="folderlist-menuitem" type="checkbox"
+	    	          label="&folderlist-menuitem.label;"
+	    	          oncommand="ImageBrowser.toggleFolderList()"/>
+	    	<menuseparator id="viewtypes-separator"/>
 	    </menupopup>
 	  </menu>
 	  <menu id="tools-menu" label="&tools-menu.label;">
@@ -85,7 +89,7 @@
 	</menubar>
 
 	<hbox flex="1">
-	  <tree id="folder-tree" datasources="rdf:files" ref="file:///Users" width="200" persist="width"
+	  <tree id="folder-tree" datasources="rdf:files" ref="file:///Users" width="200" persist="width hidden"
 	        flags="dont-build-content" hidecolumnpicker="true">
 	    <treecols>
 	      <treecol id="name" label="Name" primary="true" flex="1"/>
@@ -103,7 +107,7 @@
 	      </rule>
 	    </template>
 		</tree>
-		<splitter resizebefore="closest"/>
+		<splitter id="folder-splitter" resizebefore="closest" persist="hidden"/>
 		<deck id="display-deck" selectedIndex="0">
 		</deck>
 	</hbox>

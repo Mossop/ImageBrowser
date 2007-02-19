@@ -64,6 +64,19 @@ var ImageBrowser = {
 		var type = panel.id.substring(0, panel.id.length-6);
 		var menu = document.getElementById(type+"-menuitem");
 		menu.setAttribute("checked", "true");
+
+		var tree = document.getElementById("folder-tree");
+		menu = document.getElementById("folderlist-menuitem");
+		menu.setAttribute("checked", tree.hidden ? "false" : "true");
+	},
+	
+	toggleFolderList: function()
+	{
+		var tree = document.getElementById("folder-tree");
+		tree.hidden = !tree.hidden;
+		tree.nextSibling.hidden = tree.hidden;
+		var menu = document.getElementById("folderlist-menuitem");
+		menu.setAttribute("checked", tree.hidden ? "false" : "true");
 	},
 	
 	showAbout: function()
@@ -78,8 +91,8 @@ var ImageBrowser = {
 	
 	changeDisplay: function(type)
 	{
-		var menu = document.getElementById("viewpopup");
-		menu = menu.firstChild;
+		var menu = document.getElementById("viewtypes-separator");
+		menu = menu.nextSibling;
 		while (menu)
 		{
 			menu,setAttribute("checked", (menu.id == type+"-menuitem") ? "true" : "false");
