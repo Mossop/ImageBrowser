@@ -1,0 +1,7 @@
+<!ENTITY win.title                         "Options">
+<!ENTITY unix.title                        "&brandShortName; Preferences">
+<!ENTITY style                             "width: 300px; height: 200px;">
+
+<!ENTITY general-pane.title                "General">
+<!ENTITY thumbnailgrid-pane.title          "Thumbnails">
+<!ENTITY advanced-pane.title               "Advanced">

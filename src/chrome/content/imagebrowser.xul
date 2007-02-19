@@ -53,7 +53,7 @@
 <?xml-stylesheet href="chrome://imagebrowser/skin/imagebrowser.css" type="text/css"?>
 
 <?xul-overlay href="chrome://platform/content/imagebrowser.xul"?>
-<?xul-overlay href="chrome://imagebrowser/content/thumbnailgrid.xul"?>
+<?xul-overlay href="chrome://imagebrowser/content/viewers/thumbnailgrid/overlay.xul"?>
 
 <window title="&title;" id="ImageBrowser"
         persist="width height screenX screenY sizemode"

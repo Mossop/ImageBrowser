@@ -37,10 +37,10 @@
    -
    - ***** END LICENSE BLOCK *****
    -
-   - $HeadURL$
-   - $LastChangedBy$
-   - $Date$
-   - $Revision$
+   - $HeadURL: svn://svn.blueprintit.co.uk/dave/ImageBrowser/trunk/src/chrome/content/thumbnailgrid.xul $
+   - $LastChangedBy: dave $
+   - $Date: 2007-02-19 17:18:00 +0000 (Mon, 19 Feb 2007) $
+   - $Revision: 929 $
    -->
 
 <!DOCTYPE overlay SYSTEM "chrome://imagebrowser/locale/imagebrowser.dtd">

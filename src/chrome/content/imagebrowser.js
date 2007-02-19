@@ -84,9 +84,26 @@ var ImageBrowser = {
 		alert('about');
 	},
 	
-	showOptions: function()
+	showOptions: function(paneID)
 	{
-		alert('options');
+	  var instantApply = true;
+	  var features = "chrome,titlebar,toolbar,centerscreen" + (instantApply ? ",dialog=no" : ",modal");
+	
+	  var wm = Components.classes["@mozilla.org/appshell/window-mediator;1"]
+	                     .getService(Components.interfaces.nsIWindowMediator);
+	  var win = wm.getMostRecentWindow("imagebrowser:options");
+	  if (win)
+	  {
+	    win.focus();
+	    if (paneID)
+	    {
+	      var pane = win.document.getElementById(paneID);
+	      win.document.documentElement.showPane(pane);
+	    }
+	  }
+	  else
+	    openDialog("chrome://imagebrowser/content/options/options.xul",
+	               "Options", features, paneID);
 	},
 	
 	changeDisplay: function(type)
