@@ -1,0 +1,17 @@
+<!ENTITY title                             "&brandFullName;">
+
+<!ENTITY file-menu.label                   "File">
+<!ENTITY quit-menuitem.label               "Quit">
+
+<!ENTITY view-menu.label                   "View">
+<!ENTITY tools-menu.label                  "Tools">
+<!ENTITY console-menuitem.label            "Error Console">
+
+<!ENTITY help-menu.label                   "Help">
+<!ENTITY about-menuitem.label              "About &brandShortName;">
+
+<!ENTITY thumbnailgrid.label               "Thumbnails">
+
+<!ENTITY mac.preferences-menuitem.label    "Preferences...">
+<!ENTITY unix.preferences-menuitem.label   "Preferences">
+<!ENTITY win.preferences-menuitem.label    "Options">

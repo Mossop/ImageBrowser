@@ -1,0 +1,6 @@
+content			imagebrowser												${application.chromebase}content/
+skin				imagebrowser			classic/1.0				${application.chromebase}skin/
+locale			imagebrowser			en-US							${application.chromebase}locale/en-US/
+
+locale			branding    			en-US							${application.chromebase}branding/
+content     platform                            ${application.chromebase}platform/        platform
