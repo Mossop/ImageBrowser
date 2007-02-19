@@ -35,10 +35,10 @@
  *
  * ***** END LICENSE BLOCK *****
  *
- * $HeadURL: svn://svn.blueprintit.co.uk/dave/mozilla/firefox/FindBar/trunk/src/chrome/content/binding.js $
- * $LastChangedBy: dave $
- * $Date: 2007-01-22 18:05:13 +0000 (Mon, 22 Jan 2007) $
- * $Revision: 904 $
+ * $HeadURL$
+ * $LastChangedBy$
+ * $Date$
+ * $Revision$
  *
  */
 

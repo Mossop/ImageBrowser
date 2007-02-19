@@ -36,10 +36,10 @@
    -
    - ***** END LICENSE BLOCK *****
    -
-   - $HeadURL: svn://svn.blueprintit.co.uk/dave/mozilla/firefox/buildid/trunk/src/chrome/content/screenshot/screenshot.xul $
-   - $LastChangedBy: dave $
-   - $Date: 2006-09-30 23:46:52 +0100 (Sat, 30 Sep 2006) $
-   - $Revision: 785 $
+   - $HeadURL$
+   - $LastChangedBy$
+   - $Date$
+   - $Revision$
    -->
 
 <!DOCTYPE window [
