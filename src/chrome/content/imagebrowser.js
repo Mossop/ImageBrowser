@@ -60,6 +60,12 @@ function openWindowByType(inType, uri, features)
 }
 
 var ImageBrowser = {
+	prefs: null,
+	
+	scaleQueue: [],
+	scalings: 0,
+	maxScalings: 5,
+
 	init: function(event)
 	{
 		var display = document.getElementById("display-deck");
@@ -75,8 +81,65 @@ var ImageBrowser = {
 		if ("initialise" in mDisplayPanel)
 			mDisplayPanel.initialise();
 		mDisplayPanel.setFolder(mFolder);
+
+		this.prefs = Components.classes["@mozilla.org/preferences-service;1"]
+	                        .getService(Components.interfaces.nsIPrefService)
+	                        .getBranch("imagebrowser.").QueryInterface(Components.interfaces.nsIPrefBranch2);
+	
+		this.maxScalings = this.prefs.getIntPref("scaling.parallel");
+	
+	  this.prefs.addObserver("",this,false);
+	  window.addEventListener("unload", this, false);
+	  window.removeEventListener("load", this, false);
 	},
 	
+	destroy: function(event)
+	{
+	  window.removeEventListener("unload", this, false);
+	  this.prefs.removeObserver("",this);
+	},
+	
+  logMessage: function(message)
+  {
+    Components.classes['@mozilla.org/consoleservice;1']
+              .getService(Components.interfaces.nsIConsoleService)
+              .logStringMessage("Image Browser: "+message);
+  },
+      
+  logWarning: function(message)
+  {
+    var msg = Components.classes["@mozilla.org/scripterror;1"].createInstance(Components.interfaces.nsIScriptError);
+    
+    msg.init("Image Browser: "+message,
+             "chrome://imagebrowser/content/imagebrowser.xml",
+             "",
+             0,
+             0,
+             Components.interfaces.nsIScriptError.warningFlag,
+             "XUL JavaScript");
+    
+    var console = Components.classes["@mozilla.org/consoleservice;1"]
+                            .getService(Components.interfaces.nsIConsoleService);
+    console.logMessage(msg);
+  },
+      
+  logError: function(message)
+  {
+    var msg = Components.classes["@mozilla.org/scripterror;1"].createInstance(Components.interfaces.nsIScriptError);
+    
+    msg.init("Image Browser: "+message,
+             "chrome://imagebrowser/content/imagebrowser.xml",
+             "",
+             0,
+             0,
+             Components.interfaces.nsIScriptError.errorFlag,
+             "XUL JavaScript");
+    
+    var console = Components.classes["@mozilla.org/consoleservice;1"]
+                            .getService(Components.interfaces.nsIConsoleService);
+    console.logMessage(msg);
+  },
+          
 	onFolderSelect: function()
 	{
 		var tree = document.getElementById("folder-tree");
@@ -103,15 +166,37 @@ var ImageBrowser = {
 			canvas.width = (image.width / image.height) * 100;
 		}
 		var ctx = canvas.getContext("2d");
-		ctx.drawImage(image, 0, 0, image.width, image.height, 0, 0, canvas.width, canvas.height);
-		callback(canvas.toDataURL(), canvas.width, canvas.height);
+		ctx.save();
+		ctx.scale(canvas.width/image.width, canvas.height/image.height);
+		ctx.drawImage(image, 0, 0);
+		ctx.restore();
+		var url = canvas.toDataURL();
+		callback(url, canvas.width, canvas.height);
+		if ((this.scalings <= this.maxScalings) && (this.scaleQueue.length > 0))
+		{
+			var scaling = this.scaleQueue.shift();
+			this.startScale(scaling.uri, scaling.callback);
+		}
+		else
+			this.scalings--;
 	},
 	
-	loadThumbnailForURI: function(uri, callback)
+	startScale: function(uri, callback)
 	{
 		var image = new Image();
 		image.src = uri;
 		image.onload = function() { ImageBrowser.thumbnailCallback(image, callback); };
+	},
+	
+	loadThumbnailForURI: function(uri, callback)
+	{
+		if (this.scalings >= this.maxScalings)
+			this.scaleQueue.push({ uri: uri, callback: callback });
+		else
+		{
+			this.scalings++;
+			this.startScale(uri, callback);
+		}
 	},
 	
 	toggleFolderList: function()
@@ -168,7 +253,36 @@ var ImageBrowser = {
 		if ("initialise" in mDisplayPanel)
 			mDisplayPanel.initialise();
 		mDisplayPanel.setFolder(mFolder);
-	}
+	},
+
+	observe: function (subject, topic, data)
+	{
+		switch (data)
+		{
+			case "scaling.parallels":
+				this.maxScalings = this.prefs.getIntPref(data);
+				while ((this.scalings < this.maxScalings) && (this.scaleQueue.length > 0))
+				{
+					var scaling = this.scaleQueue.shift();
+					this.scalings++;
+					this.startScale(scaling.uri, scaling.callback);
+				}
+				break;
+		}
+	},
+	
+	handleEvent: function(event)
+	{
+		switch (event.type)
+		{
+			case "load":
+				this.init();
+				break;
+			case "unload":
+				this.destroy();
+				break;
+		}
+	},
 };
 
-window.addEventListener("load", ImageBrowser.init, false);
+window.addEventListener("load", ImageBrowser, false);
