@@ -119,6 +119,14 @@
 		<deck id="display-deck" selectedIndex="0" flex="1">
 		</deck>
 	</hbox>
+
 	<xhtml:canvas id="thumbnail-canvas" style="display: none"/>
+
+	<statusbar>
+		<statusbarpanel id="folder-statusbarpanel"/>
+		<spacer flex="1"/>
+		<progressmeter id="progress-progressmeter" hidden="true" mode="determined"/>
+		<resizer/>
+	</statusbar>
 	
 </window>

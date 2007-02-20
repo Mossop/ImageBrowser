@@ -59,6 +59,45 @@ function openWindowByType(inType, uri, features)
     window.open(uri, "_blank", "chrome,extrachrome,menubar,resizable,scrollbars,status,toolbar");
 }
 
+var ProgressHandler = {
+	total: 0,
+	current: 0,
+	
+	addOperation: function(metric)
+	{
+		var meter = document.getElementById("progress-progressmeter");
+		this.total += metric;
+		meter.value = parseInt(this.current / this.total * 100);
+		meter.hidden = false;
+	},
+	
+	removeOperation: function(metric)
+	{
+		var meter = document.getElementById("progress-progressmeter");
+		this.total -= metric;
+		meter.value = parseInt(this.current / this.total * 100);
+		if (this.current >= this.total)
+		{
+			meter.hidden = true;
+			this.current = 0;
+			this.total = 0;
+		}
+	},
+	
+	completeOperation: function(metric)
+	{
+		var meter = document.getElementById("progress-progressmeter");
+		this.current += metric;
+		meter.value = parseInt(this.current / this.total * 100);
+		if (this.current >= this.total)
+		{
+			meter.hidden = true;
+			this.current = 0;
+			this.total = 0;
+		}
+	}
+}
+
 var ImageBrowser = {
 	prefs: null,
 	cache: null,
@@ -173,6 +212,7 @@ var ImageBrowser = {
                  .QueryInterface(Components.interfaces.nsIFileProtocolHandler);
 		mFolder = fph.getFileFromURLSpec(view.getResourceAtIndex(tree.currentIndex).Value);
 		mDisplayPanel.setFolder(mFolder);
+		document.getElementById("folder-statusbarpanel").label = mFolder.path;
 	},
 	
 	thumbnailCallback: function(file, image, size, callback)
@@ -195,6 +235,7 @@ var ImageBrowser = {
 		ctx.restore();
 		var url = canvas.toDataURL();
 		
+		ProgressHandler.completeOperation(10);
 		callback(url, canvas.width, canvas.height);
 		var stmt = this.cache.createStatement("INSERT OR REPLACE INTO Thumbnail (file,size,date,uri,width,height) VALUES (?1,?2,?3,?4,?5,?6);");
 		stmt.bindStringParameter(0, file.path);
@@ -237,7 +278,7 @@ var ImageBrowser = {
 			var width = stmt.getInt32(1);
 			var height = stmt.getInt32(2);
 			stmt.reset();
-			callback(url, width, height);
+			window.setTimeout(callback, 100, url, width, height);
 			stmt = this.cache.createStatement("INSERT OR REPLACE INTO Thumbnail (file,size,date,uri,width,height) VALUES (?1,?2,?3,?4,?5,?6);");
 			stmt.bindStringParameter(0, file.path);
 			stmt.bindInt32Parameter(1, size);
@@ -250,6 +291,7 @@ var ImageBrowser = {
 		}
 		else
 		{
+			ProgressHandler.addOperation(10);
 			if (this.scalings >= this.maxScalings)
 				this.scaleQueue.push({ file: file, size: size, callback: callback });
 			else
