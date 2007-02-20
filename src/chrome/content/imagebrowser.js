@@ -139,7 +139,12 @@ var ImageBrowser = {
                             .getService(Components.interfaces.nsIConsoleService);
     console.logMessage(msg);
   },
-          
+  
+  getThumbnailSize: function()
+  {
+  	return 100;
+  },
+       
 	onFolderSelect: function()
 	{
 		var tree = document.getElementById("folder-tree");
@@ -152,18 +157,18 @@ var ImageBrowser = {
 		mDisplayPanel.setFolder(mFolder);
 	},
 	
-	thumbnailCallback: function(image, callback)
+	thumbnailCallback: function(image, size, callback)
 	{
 		var canvas = document.getElementById("thumbnail-canvas");
 		if (image.width > image.height)
 		{
-			canvas.width = 100;
-			canvas.height = (image.height / image.width) * 100;
+			canvas.width = size;
+			canvas.height = (image.height / image.width) * size;
 		}
 		else
 		{
-			canvas.height = 100;
-			canvas.width = (image.width / image.height) * 100;
+			canvas.height = size;
+			canvas.width = (image.width / image.height) * size;
 		}
 		var ctx = canvas.getContext("2d");
 		ctx.save();
@@ -175,27 +180,27 @@ var ImageBrowser = {
 		if ((this.scalings <= this.maxScalings) && (this.scaleQueue.length > 0))
 		{
 			var scaling = this.scaleQueue.shift();
-			this.startScale(scaling.uri, scaling.callback);
+			this.startScale(scaling.uri, scaling.size, scaling.callback);
 		}
 		else
 			this.scalings--;
 	},
 	
-	startScale: function(uri, callback)
+	startScale: function(uri, size, callback)
 	{
 		var image = new Image();
 		image.src = uri;
-		image.onload = function() { ImageBrowser.thumbnailCallback(image, callback); };
+		image.onload = function() { ImageBrowser.thumbnailCallback(image, size, callback); };
 	},
 	
-	loadThumbnailForURI: function(uri, callback)
+	loadThumbnailForURI: function(uri, size, callback)
 	{
 		if (this.scalings >= this.maxScalings)
-			this.scaleQueue.push({ uri: uri, callback: callback });
+			this.scaleQueue.push({ uri: uri, size: size, callback: callback });
 		else
 		{
 			this.scalings++;
-			this.startScale(uri, callback);
+			this.startScale(uri, size, callback);
 		}
 	},
 	
@@ -265,7 +270,7 @@ var ImageBrowser = {
 				{
 					var scaling = this.scaleQueue.shift();
 					this.scalings++;
-					this.startScale(scaling.uri, scaling.callback);
+					this.startScale(scaling.uri, scaling.size, scaling.callback);
 				}
 				break;
 		}
@@ -282,7 +287,7 @@ var ImageBrowser = {
 				this.destroy();
 				break;
 		}
-	},
+	}
 };
 
 window.addEventListener("load", ImageBrowser, false);

@@ -119,6 +119,6 @@
 		<deck id="display-deck" selectedIndex="0" flex="1">
 		</deck>
 	</hbox>
-	<xhtml:canvas id="thumbnail-canvas" height="100" width="100" style="display: none"/>
+	<xhtml:canvas id="thumbnail-canvas" style="display: none"/>
 	
 </window>

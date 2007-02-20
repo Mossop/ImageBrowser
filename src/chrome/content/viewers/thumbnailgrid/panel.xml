@@ -37,10 +37,10 @@
    -
    - ***** END LICENSE BLOCK *****
    -
-   - $HeadURL: svn://svn.blueprintit.co.uk/dave/mozilla/firefox/TabSidebar/trunk/src/chrome/global/content/widgets/subpane.xml $
-   - $LastChangedBy: dave $
-   - $Date: 2006-08-01 14:45:11 +0100 (Tue, 01 Aug 2006) $
-   - $Revision: 728 $
+   - $HeadURL$
+   - $LastChangedBy$
+   - $Date$
+   - $Revision$
    -->
    
 <bindings xmlns="http://www.mozilla.org/xbl"
@@ -127,8 +127,8 @@
 	<binding id="thumbnail" name="thumbnail">
 	
 		<content orient="vertical" align="center">
-			<xul:vbox width="125" align="center">
-				<xul:box width="100" height="100" orient="vertical" align="center" pack="center">
+			<xul:vbox align="center">
+				<xul:box orient="vertical" align="center" pack="center">
 					<xul:image anonid="thumbnail"/>
 				</xul:box>
 				<xul:label anonid="name" crop="end"/>
@@ -147,8 +147,13 @@
 
 				var label = document.getAnonymousElementByAttribute(this, "anonid", "name");
 				label.value = this._file.leafName
+				var size = ImageBrowser.getThumbnailSize();
+				var box = document.getAnonymousElementByAttribute(this, "anonid", "thumbnail").parentNode;
+				box.width = size;
+				box.height = size;
+				box.parentNode.width = size*1.25;
 				var self = this;
-				ImageBrowser.loadThumbnailForURI(this.getAttribute("file"), function(uri, width, height) { self.onThumbnailLoaded(uri, width, height) });
+				ImageBrowser.loadThumbnailForURI(this.getAttribute("file"), ImageBrowser.getThumbnailSize(), function(uri, width, height) { self.onThumbnailLoaded(uri, width, height) });
 			</constructor>
 			
 			<method name="onThumbnailLoaded">
