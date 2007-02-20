@@ -100,7 +100,7 @@
 	        flags="dont-build-content" hidecolumnpicker="true" seltype="single"
 	        onselect="ImageBrowser.onFolderSelect()">
 	    <treecols>
-	      <treecol id="name" label="Name" primary="true" flex="1"/>
+	      <treecol id="name" hideheader="true" label="Name" primary="true" flex="1"/>
 	    </treecols>
 	    <template>
 	      <rule NC:IsDirectory="true">

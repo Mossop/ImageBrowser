@@ -61,6 +61,7 @@ function openWindowByType(inType, uri, features)
 
 var ImageBrowser = {
 	prefs: null,
+	cache: null,
 	
 	scaleQueue: [],
 	scalings: 0,
@@ -80,23 +81,40 @@ var ImageBrowser = {
 		
 		if ("initialise" in mDisplayPanel)
 			mDisplayPanel.initialise();
-		mDisplayPanel.setFolder(mFolder);
+		//mDisplayPanel.setFolder(mFolder);
 
 		this.prefs = Components.classes["@mozilla.org/preferences-service;1"]
 	                        .getService(Components.interfaces.nsIPrefService)
 	                        .getBranch("imagebrowser.").QueryInterface(Components.interfaces.nsIPrefBranch2);
 	
-		this.maxScalings = this.prefs.getIntPref("scaling.parallel");
+		this.maxScalings = this.prefs.getIntPref("scaling.parallels");
 	
 	  this.prefs.addObserver("",this,false);
 	  window.addEventListener("unload", this, false);
 	  window.removeEventListener("load", this, false);
+
+		var dbfile = Components.classes["@mozilla.org/file/directory_service;1"]
+		                       .getService(Components.interfaces.nsIProperties)
+		                       .get("ProfD", Components.interfaces.nsIFile);
+		dbfile.append("cache.sqlite");
+		var createtables = !dbfile.exists();
+		
+		var storageService = Components.classes["@mozilla.org/storage/service;1"]
+		                               .getService(Components.interfaces.mozIStorageService);
+		this.cache = storageService.openDatabase(dbfile);
+		if (createtables)
+			this.initialiseCache();
 	},
 	
 	destroy: function(event)
 	{
 	  window.removeEventListener("unload", this, false);
 	  this.prefs.removeObserver("",this);
+	},
+	
+	initialiseCache: function()
+	{
+		this.cache.createTable("Thumbnail", "file TEXT, size INTEGER, date INTEGER, uri TEXT, width INTEGER, height INTEGER, UNIQUE (file,size)");
 	},
 	
   logMessage: function(message)
@@ -157,7 +175,7 @@ var ImageBrowser = {
 		mDisplayPanel.setFolder(mFolder);
 	},
 	
-	thumbnailCallback: function(image, size, callback)
+	thumbnailCallback: function(file, image, size, callback)
 	{
 		var canvas = document.getElementById("thumbnail-canvas");
 		if (image.width > image.height)
@@ -176,31 +194,69 @@ var ImageBrowser = {
 		ctx.drawImage(image, 0, 0);
 		ctx.restore();
 		var url = canvas.toDataURL();
+		
 		callback(url, canvas.width, canvas.height);
+		var stmt = this.cache.createStatement("INSERT OR REPLACE INTO Thumbnail (file,size,date,uri,width,height) VALUES (?1,?2,?3,?4,?5,?6);");
+		stmt.bindStringParameter(0, file.path);
+		stmt.bindInt32Parameter(1, size);
+		stmt.bindInt64Parameter(2, Date.now());
+		stmt.bindStringParameter(3, url);
+		stmt.bindInt32Parameter(4, canvas.width);
+		stmt.bindInt32Parameter(5, canvas.height);
+		stmt.execute();
+		stmt.reset();
+		
 		if ((this.scalings <= this.maxScalings) && (this.scaleQueue.length > 0))
 		{
 			var scaling = this.scaleQueue.shift();
-			this.startScale(scaling.uri, scaling.size, scaling.callback);
+			this.startScale(scaling.file, scaling.size, scaling.callback);
 		}
 		else
 			this.scalings--;
 	},
 	
-	startScale: function(uri, size, callback)
+	startScale: function(file, size, callback)
 	{
+		var ios = Components.classes["@mozilla.org/network/io-service;1"]
+                        .getService(Components.interfaces.nsIIOService);
 		var image = new Image();
-		image.src = uri;
-		image.onload = function() { ImageBrowser.thumbnailCallback(image, size, callback); };
+		image.src = ios.newFileURI(file).spec;
+		image.onload = function() { ImageBrowser.thumbnailCallback(file, image, size, callback); };
 	},
 	
-	loadThumbnailForURI: function(uri, size, callback)
+	loadThumbnailForFile: function(file, size, callback)
 	{
-		if (this.scalings >= this.maxScalings)
-			this.scaleQueue.push({ uri: uri, size: size, callback: callback });
+		var stmt = this.cache.createStatement("SELECT uri,width,height FROM Thumbnail WHERE file=?1 AND size=?2 AND date>?3");
+		stmt.bindStringParameter(0, file.path);
+		stmt.bindInt32Parameter(1, size);
+		stmt.bindInt64Parameter(2, file.lastModifiedTime);
+		
+		if (stmt.executeStep())
+		{
+			var url = stmt.getString(0);
+			var width = stmt.getInt32(1);
+			var height = stmt.getInt32(2);
+			stmt.reset();
+			callback(url, width, height);
+			stmt = this.cache.createStatement("INSERT OR REPLACE INTO Thumbnail (file,size,date,uri,width,height) VALUES (?1,?2,?3,?4,?5,?6);");
+			stmt.bindStringParameter(0, file.path);
+			stmt.bindInt32Parameter(1, size);
+			stmt.bindInt64Parameter(2, Date.now());
+			stmt.bindStringParameter(3, url);
+			stmt.bindInt32Parameter(4, width);
+			stmt.bindInt32Parameter(5, height);
+			stmt.execute();
+			stmt.reset();
+		}
 		else
 		{
-			this.scalings++;
-			this.startScale(uri, size, callback);
+			if (this.scalings >= this.maxScalings)
+				this.scaleQueue.push({ file: file, size: size, callback: callback });
+			else
+			{
+				this.scalings++;
+				this.startScale(file, size, callback);
+			}
 		}
 	},
 	
@@ -270,7 +326,7 @@ var ImageBrowser = {
 				{
 					var scaling = this.scaleQueue.shift();
 					this.scalings++;
-					this.startScale(scaling.uri, scaling.size, scaling.callback);
+					this.startScale(scaling.file, scaling.size, scaling.callback);
 				}
 				break;
 		}

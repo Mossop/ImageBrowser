@@ -153,7 +153,7 @@
 				box.height = size;
 				box.parentNode.width = size*1.25;
 				var self = this;
-				ImageBrowser.loadThumbnailForURI(this.getAttribute("file"), ImageBrowser.getThumbnailSize(), function(uri, width, height) { self.onThumbnailLoaded(uri, width, height) });
+				ImageBrowser.loadThumbnailForFile(this._file, ImageBrowser.getThumbnailSize(), function(uri, width, height) { self.onThumbnailLoaded(uri, width, height) });
 			</constructor>
 			
 			<method name="onThumbnailLoaded">
