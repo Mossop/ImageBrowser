@@ -50,15 +50,7 @@
 
     <content>
     	<xul:grid flex="1">
-    		<xul:columns>
-    			<xul:column flex="1"/>
-    			<xul:column flex="1"/>
-    			<xul:column flex="1"/>
-    			<xul:column flex="1"/>
-    		</xul:columns>
-    		<xul:rows flex="1">
-	    		<children/>
-	    	</xul:rows>
+    		<children/>
     	</xul:grid>
     </content>
 
@@ -73,12 +65,19 @@
     				this.removeChild(this.firstChild);
     			}
     			
-    			/*for (var col = 0; col<this._columns; col++)
+    			var columns = document.createElementNS("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul", "columns");
+    			this.appendChild(columns);
+    			
+    			for (var col = 0; col<this._columns; col++)
     			{
     				var column = document.createElementNS("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul", "column");
     				column.setAttribute("flex", "1");
-    				this.appendChild(column);
-    			}*/
+    				columns.appendChild(column);
+    			}
+    			
+    			var rows = document.createElementNS("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul", "rows");
+    			rows.setAttribute("flex", "1");
+    			this.appendChild(rows);
     			
 					var ios = Components.classes["@mozilla.org/network/io-service;1"]
 			                        .getService(Components.interfaces.nsIIOService);
@@ -90,7 +89,7 @@
     				if (col == 0)
     				{
     					row = document.createElementNS("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul", "row");
-    					this.appendChild(row);
+    					rows.appendChild(row);
     				}
     				var thumbnail = document.createElementNS("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul", "thumbnail");
     				thumbnail.setAttribute("style", "-moz-binding: url(chrome://imagebrowser/content/viewers/thumbnailgrid/panel.xml#thumbnail)");
