@@ -61,15 +61,35 @@
 	    </xul:scrollbox>
     </content>
 
-    <implementation>
+    <implementation implements="nsITimerCallback">
+
+      <field name="_rebuildTimer">null</field>
+
     	<method name="_rebuild">
     		<body>
     		<![CDATA[
     			while (this.firstChild)
-    			{
     				this.removeChild(this.firstChild);
-    			}
     			
+   				var scrollbox = document.getAnonymousElementByAttribute(this, "anonid", "scrollbox");
+   				var viewwidth = {};
+   				scrollbox.boxObject.QueryInterface(Components.interfaces.nsIScrollBoxObject).getScrolledSize(viewwidth, {});
+   				if (viewwidth.value == 0)
+   				{
+   					if (!this._rebuildTimer)
+   					{
+   						this._rebuildTimer = Components.classes["@mozilla.org/timer;1"]
+   						                               .createInstance(Components.interfaces.nsITimer);
+   						this._rebuildTimer.initWithCallback(this, 50, Components.interfaces.nsITimer.TYPE_ONE_SHOT);
+   					}
+   					return;
+   				}
+   				else if (this._rebuildTimer)
+   				{
+   					this._rebuildTimer.cancel();
+   					this.rebuildTimer = null;
+   				}
+
     			const XMLNS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
 					var ios = Components.classes["@mozilla.org/network/io-service;1"]
 			                        .getService(Components.interfaces.nsIIOService);
@@ -90,11 +110,6 @@
    				
    				var width = parseInt(window.getComputedStyle(thumbnail, null).width);
    				
-   				var scrollbox = document.getAnonymousElementByAttribute(this, "anonid", "scrollbox");
-   				//scrollbox = document.getAnonymousNodes(scrollbox)[0];
-   				var viewwidth = {};
-   				scrollbox.boxObject.QueryInterface(Components.interfaces.nsIScrollBoxObject).getScrolledSize(viewwidth, {});
-   				//alert(width+" "+viewwidth.value);
    				var columns = Math.floor(viewwidth.value/width);
     			
     			for (var col = 1; col < columns; col++)
@@ -149,6 +164,14 @@
     			this._rebuild();
     		</body>
     	</method>
+
+      <method name="notify">
+        <parameter name="timer"/>
+        <body>
+          if (timer == this._rebuildTimer)
+            this._rebuild();
+        </body>
+      </method>
     </implementation>
     
   </binding>
