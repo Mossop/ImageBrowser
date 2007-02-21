@@ -54,7 +54,7 @@
 	</menupopup>
 	
 	<deck id="display-deck" selectedIndex="0" persist="selectedIndex">
-		<scrollbox id="thumbnailgrid-panel" flex="1"/>
+		<vbox id="thumbnailgrid-panel" flex="1" align="stretch"/>
 	</deck>
 	
 </overlay>

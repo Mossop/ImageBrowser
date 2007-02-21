@@ -46,22 +46,22 @@
 <bindings xmlns="http://www.mozilla.org/xbl"
           xmlns:xul="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
 
-  <binding id="panel" name="panel" extends="xul:scrollbox">
+  <binding id="panel" name="panel">
 
     <content>
-    	<xul:grid flex="1">
-    		<xul:columns>
-    			<children includes="column"/>
-    		</xul:columns>
-    		<xul:rows flex="1">
-	    		<children/>
-	    	</xul:rows>
-    	</xul:grid>
+    	<xul:scrollbox anonid="scrollbox" flex="1" orient="vertical" align="stretch">
+	    	<xul:grid flex="1">
+	    		<xul:columns>
+	    			<children includes="column"/>
+	    		</xul:columns>
+	    		<xul:rows flex="1">
+		    		<children/>
+		    	</xul:rows>
+	    	</xul:grid>
+	    </xul:scrollbox>
     </content>
 
     <implementation>
-    	<field name="_columns">4</field>
-    	
     	<method name="_rebuild">
     		<body>
     		<![CDATA[
@@ -71,26 +71,44 @@
     			}
     			
     			const XMLNS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
+					var ios = Components.classes["@mozilla.org/network/io-service;1"]
+			                        .getService(Components.interfaces.nsIIOService);
     			
-    			var column;
-    			for (var col = 0; col<this._columns; col++)
+    			var entries = ImageBrowser.getFolderEntries();
+    			if (entries.length == 0)
+    				return;
+    				
+    			var column = document.createElementNS(XMLNS, "column");
+    			this.appendChild(column);
+    			
+    			var row = document.createElementNS(XMLNS, "row");
+    			this.appendChild(row);
+    			
+   				var thumbnail = document.createElementNS(XMLNS, "thumbnail");
+   				thumbnail.setAttribute("file", ios.newFileURI(entries[0]).spec);
+   				row.appendChild(thumbnail);
+   				
+   				var width = parseInt(window.getComputedStyle(thumbnail, null).width);
+   				
+   				var scrollbox = document.getAnonymousElementByAttribute(this, "anonid", "scrollbox");
+   				//scrollbox = document.getAnonymousNodes(scrollbox)[0];
+   				var viewwidth = {};
+   				scrollbox.boxObject.QueryInterface(Components.interfaces.nsIScrollBoxObject).getScrolledSize(viewwidth, {});
+   				//alert(width+" "+viewwidth.value);
+   				var columns = Math.floor(viewwidth.value/width);
+    			
+    			for (var col = 1; col < columns; col++)
     			{
-    				if (col != 0)
-    				{
-	    				column = document.createElementNS(XMLNS, "column");
-	    				column.setAttribute("flex", "1");
-	    				this.appendChild(column);
-    				}
+    				column = document.createElementNS(XMLNS, "column");
+    				column.setAttribute("flex", "1");
+    				this.appendChild(column);
+
     				column = document.createElementNS(XMLNS, "column");
     				this.appendChild(column);
     			}
     			
-					var ios = Components.classes["@mozilla.org/network/io-service;1"]
-			                        .getService(Components.interfaces.nsIIOService);
-    			var col = 0;
-    			var row = null;
-    			var entries = ImageBrowser.getFolderEntries();
-    			for (var i=0; i<entries.length; i++)
+    			var col = 1 % columns;
+    			for (var i=1; i<entries.length; i++)
     			{
     				if (col == 0)
     				{
@@ -105,7 +123,7 @@
     				var thumbnail = document.createElementNS(XMLNS, "thumbnail");
     				thumbnail.setAttribute("file", ios.newFileURI(entries[i]).spec);
     				row.appendChild(thumbnail);
-    				col = (col + 1) % this._columns;
+    				col = (col + 1) % columns;
     			}
     			
     			while (col > 0)
@@ -114,7 +132,7 @@
    					row.appendChild(box);
    					box = document.createElementNS(XMLNS, "spacer");
    					row.appendChild(box);
-    				col = (col + 1) % this._columns;
+    				col = (col + 1) % columns;
     			}
     		]]>
     		</body>
