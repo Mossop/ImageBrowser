@@ -62,21 +62,41 @@ function openWindowByType(inType, uri, features)
 var Comparators = {
 	name: function(a,b)
 	{
+		if (a.leafName < b.leafName)
+			return -1;
+		if (a.leafName > b.leafName)
+			return 1;
 		return 0;
 	},
 	
 	date: function(a,b)
 	{
-		return 0;
+		return a.lastModifiedTime - b.lastModifiedTime;
 	},
 	
 	size: function(a,b)
 	{
-		return 0;
+		return a.fileSize - b.fileSize;
 	},
 	
 	type: function(a,b)
 	{
+		function getType(file)
+		{
+			var name = file.leafName;
+			var pos = name.indexOf(".");
+			if (pos>0)
+				return name.substr(pos+1).toLowerCase();
+			else
+				return "";
+		}
+		
+		var typea = getType(a);
+		var typeb = getType(b);
+		if (typea < typeb)
+			return -1;
+		if (typea > typeb)
+			return 1;
 		return 0;
 	}
 }
@@ -251,14 +271,21 @@ var ImageBrowser = {
 		while (entries.hasMoreElements())
 		{
 			var file = entries.getNext().QueryInterface(Components.interfaces.nsIFile);
-			try
+			if (file.isDirectory())
 			{
-				var type = mime.getTypeFromFile(file);
-				if (type.substring(0,6) == "image/")
-					files.push(file);
 			}
-			catch (e) { }
+			else
+			{
+				try
+				{
+					var type = mime.getTypeFromFile(file);
+					if (type.substring(0,6) == "image/")
+						files.push(file);
+				}
+				catch (e) { }
+			}
 		}
+		files.sort(Comparators[this.comparator]);
 		return files;
   },
   
