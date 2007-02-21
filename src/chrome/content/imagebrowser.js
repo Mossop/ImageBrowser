@@ -59,6 +59,28 @@ function openWindowByType(inType, uri, features)
     window.open(uri, "_blank", "chrome,extrachrome,menubar,resizable,scrollbars,status,toolbar");
 }
 
+var Comparators = {
+	name: function(a,b)
+	{
+		return 0;
+	},
+	
+	date: function(a,b)
+	{
+		return 0;
+	},
+	
+	size: function(a,b)
+	{
+		return 0;
+	},
+	
+	type: function(a,b)
+	{
+		return 0;
+	}
+}
+
 var ProgressHandler = {
 	total: 0,
 	current: 0,
@@ -101,6 +123,7 @@ var ProgressHandler = {
 var ImageBrowser = {
 	prefs: null,
 	cache: null,
+	comparator: null,
 	
 	scaleQueue: [],
 	scalings: 0,
@@ -118,16 +141,16 @@ var ImageBrowser = {
 		menu = document.getElementById("folderlist-menuitem");
 		menu.setAttribute("checked", tree.hidden ? "false" : "true");
 		
-		if ("initialise" in mDisplayPanel)
-			mDisplayPanel.initialise();
-		//mDisplayPanel.setFolder(mFolder);
-
 		this.prefs = Components.classes["@mozilla.org/preferences-service;1"]
 	                        .getService(Components.interfaces.nsIPrefService)
 	                        .getBranch("imagebrowser.").QueryInterface(Components.interfaces.nsIPrefBranch2);
 	
 		this.maxScalings = this.prefs.getIntPref("scaling.parallels");
-	
+		this.comparator = this.prefs.getCharPref("sortorder");
+		if (!(this.comparator in Comparators))
+			this.comparator = "name";
+		document.getElementById("sort-"+this.comparator+"-menuitem").setAttribute("checked", "true");
+
 	  this.prefs.addObserver("",this,false);
 	  window.addEventListener("unload", this, false);
 	  window.removeEventListener("load", this, false);
@@ -143,6 +166,22 @@ var ImageBrowser = {
 		this.cache = storageService.openDatabase(dbfile);
 		if (createtables)
 			this.initialiseCache();
+		
+		if (this.prefs.prefHasUserValue("lastdir"))
+		{
+			mFolder = Components.classes["@mozilla.org/file/local;1"]
+			                    .createInstance(Components.instances.nsILocalFile);
+			mFolder.initWithPath(this.prefs.getCharPref("lastdir"));
+		}
+		else
+			mFolder = Components.classes["@mozilla.org/file/directory_service;1"]
+			                    .getService(Components.interfaces.nsIProperties)
+			                    .get("Home", Components.interfaces.nsIFile);
+		document.getElementById("folder-statusbarpanel").label = mFolder.path;
+		
+		if ("initialise" in mDisplayPanel)
+			mDisplayPanel.initialise();
+		mDisplayPanel.onFolderChanged();
 	},
 	
 	destroy: function(event)
@@ -197,11 +236,41 @@ var ImageBrowser = {
     console.logMessage(msg);
   },
   
+  getFolder: function()
+  {
+  	return mFolder;
+  },
+  
+  getFolderEntries: function()
+  {
+		var mime = Components.classes["@mozilla.org/mime;1"]
+		                     .getService(Components.interfaces.nsIMIMEService);
+  	var files = [];
+		var entries = mFolder.directoryEntries;
+		while (entries.hasMoreElements())
+		{
+			var file = entries.getNext().QueryInterface(Components.interfaces.nsIFile);
+			try
+			{
+				var type = mime.getTypeFromFile(file);
+				if (type.substring(0,6) == "image/")
+					files.push(file);
+			}
+			catch (e) { }
+		}
+		return files;
+  },
+  
   getThumbnailSize: function()
   {
   	return 100;
   },
-       
+  
+  changeSortOrder: function(order)
+  {
+  	this.prefs.setCharPref("sortorder", order);
+  },
+  
 	onFolderSelect: function()
 	{
 		var tree = document.getElementById("folder-tree");
@@ -211,7 +280,7 @@ var ImageBrowser = {
     var fph = ios.getProtocolHandler("file")
                  .QueryInterface(Components.interfaces.nsIFileProtocolHandler);
 		mFolder = fph.getFileFromURLSpec(view.getResourceAtIndex(tree.currentIndex).Value);
-		mDisplayPanel.setFolder(mFolder);
+		mDisplayPanel.onFolderChanged();
 		document.getElementById("folder-statusbarpanel").label = mFolder.path;
 	},
 	
@@ -362,6 +431,21 @@ var ImageBrowser = {
 	{
 		switch (data)
 		{
+			case "sortorder":
+				var newc = this.prefs.getCharPref(data);
+				if (newc != this.comparator)
+				{
+					if (newc in Comparators)
+					{
+						document.getElementById("sort-"+this.comparator+"-menuitem").removeAttribute("checked");
+						this.comparator = newc;
+						document.getElementById("sort-"+this.comparator+"-menuitem").setAttribute("checked", "true");
+						mDisplayPanel.onSortChanged();
+					}
+					else
+						this.prefs.setCharPref(data, this.comparator);
+				}
+				break;
 			case "scaling.parallels":
 				this.maxScalings = this.prefs.getIntPref(data);
 				while ((this.scalings < this.maxScalings) && (this.scaleQueue.length > 0))

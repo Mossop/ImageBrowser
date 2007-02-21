@@ -64,7 +64,6 @@
 
     <implementation>
     	<field name="_columns">4</field>
-    	<field name="_folder">null</field>
     	
     	<method name="_rebuild">
     		<body>
@@ -83,40 +82,34 @@
     			
 					var ios = Components.classes["@mozilla.org/network/io-service;1"]
 			                        .getService(Components.interfaces.nsIIOService);
-					var mime = Components.classes["@mozilla.org/mime;1"]
-					                     .getService(Components.interfaces.nsIMIMEService);
     			var col = 0;
     			var row = null;
-    			var entries = this._folder.directoryEntries;
-    			while (entries.hasMoreElements())
+    			var entries = ImageBrowser.getFolderEntries();
+    			for (var i=0; i<entries.length; i++)
     			{
-    				var file = entries.getNext().QueryInterface(Components.interfaces.nsIFile);
-    				try
+    				if (col == 0)
     				{
-							var type = mime.getTypeFromFile(file);
-							if (type.substring(0,6) == "image/")
-							{
-		    				if (col == 0)
-		    				{
-		    					row = document.createElementNS("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul", "row");
-		    					this.appendChild(row);
-		    				}
-		    				var thumbnail = document.createElementNS("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul", "thumbnail");
-		    				thumbnail.setAttribute("style", "-moz-binding: url(chrome://imagebrowser/content/viewers/thumbnailgrid/panel.xml#thumbnail)");
-		    				thumbnail.setAttribute("file", ios.newFileURI(file).spec);
-		    				row.appendChild(thumbnail);
-		    				col = (col + 1) % this._columns;
-		    			}
-		    		} catch (e) { }
+    					row = document.createElementNS("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul", "row");
+    					this.appendChild(row);
+    				}
+    				var thumbnail = document.createElementNS("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul", "thumbnail");
+    				thumbnail.setAttribute("style", "-moz-binding: url(chrome://imagebrowser/content/viewers/thumbnailgrid/panel.xml#thumbnail)");
+    				thumbnail.setAttribute("file", ios.newFileURI(entries[i]).spec);
+    				row.appendChild(thumbnail);
+    				col = (col + 1) % this._columns;
     			}
     		]]>
     		</body>
     	</method>
     	
-    	<method name="setFolder">
-    		<parameter name="folder"/>
+    	<method name="onSortChanged">
     		<body>
-    			this._folder = folder;
+    			this._rebuild();
+    		</body>
+    	</method>
+    	
+    	<method name="onFolderChanged">
+    		<body>
     			this._rebuild();
     		</body>
     	</method>

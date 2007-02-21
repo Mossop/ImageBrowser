@@ -74,6 +74,22 @@
 	  </menu>
 	  <menu id="view-menu" label="&view-menu.label;">
 	    <menupopup id="view-popup">
+	    	<menu id="arrange-menu" label="&arrange-menu.label;">
+	    		<menupopup id="arrange-popup">
+	    			<menuitem id="sort-name-menuitem" type="checkbox"
+	    			          label="&sort-name-menuitem.label;"
+	    			          oncommand="ImageBrowser.changeSortOrder(this.id.substr(5, this.id.length-14))"/>
+	    			<menuitem id="sort-date-menuitem" type="checkbox"
+	    			          label="&sort-date-menuitem.label;"
+	    			          oncommand="ImageBrowser.changeSortOrder(this.id.substr(5, this.id.length-14))"/>
+	    			<menuitem id="sort-size-menuitem" type="checkbox"
+	    			          label="&sort-size-menuitem.label;"
+	    			          oncommand="ImageBrowser.changeSortOrder(this.id.substr(5, this.id.length-14))"/>
+	    			<menuitem id="sort-type-menuitem" type="checkbox"
+	    			          label="&sort-type-menuitem.label;"
+	    			          oncommand="ImageBrowser.changeSortOrder(this.id.substr(5, this.id.length-14))"/>
+	    		</menupopup>
+	    	</menu>
 	    	<menuitem id="folderlist-menuitem" type="checkbox"
 	    	          label="&folderlist-menuitem.label;"
 	    	          oncommand="ImageBrowser.toggleFolderList()"/>

@@ -4,6 +4,11 @@
 <!ENTITY quit-menuitem.label               "Quit">
 
 <!ENTITY view-menu.label                   "View">
+<!ENTITY arrange-menu.label                "Arrange By">
+<!ENTITY sort-name-menuitem.label          "Name">
+<!ENTITY sort-date-menuitem.label          "Date">
+<!ENTITY sort-size-menuitem.label          "Size">
+<!ENTITY sort-type-menuitem.label          "Type">
 <!ENTITY folderlist-menuitem.label         "Folder List">
 
 <!ENTITY tools-menu.label                  "Tools">
