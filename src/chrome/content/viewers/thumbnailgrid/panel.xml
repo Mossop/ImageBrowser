@@ -87,7 +87,7 @@
    				else if (this._rebuildTimer)
    				{
    					this._rebuildTimer.cancel();
-   					this.rebuildTimer = null;
+   					this._rebuildTimer = null;
    				}
 
     			const XMLNS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
@@ -214,11 +214,14 @@
 				<parameter name="width"/>
 				<parameter name="height"/>
 				<body>
-					var thumbnail = document.getAnonymousElementByAttribute(this, "anonid", "thumbnail");
-					thumbnail.src = uri;
-					thumbnail.width = width;
-					thumbnail.height = height;
-					ProgressHandler.completeOperation(1);
+					if (this.parentNode && this.parentNode.parentNode)
+					{
+						var thumbnail = document.getAnonymousElementByAttribute(this, "anonid", "thumbnail");
+						thumbnail.src = uri;
+						thumbnail.width = width;
+						thumbnail.height = height;
+						ProgressHandler.completeOperation(1);
+					}
 				</body>
 			</method>
 		</implementation>
