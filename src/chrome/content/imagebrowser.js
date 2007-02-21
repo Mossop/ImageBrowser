@@ -170,7 +170,7 @@ var ImageBrowser = {
 		if (this.prefs.prefHasUserValue("lastdir"))
 		{
 			mFolder = Components.classes["@mozilla.org/file/local;1"]
-			                    .createInstance(Components.instances.nsILocalFile);
+			                    .createInstance(Components.interfaces.nsILocalFile);
 			mFolder.initWithPath(this.prefs.getCharPref("lastdir"));
 		}
 		else
@@ -186,6 +186,7 @@ var ImageBrowser = {
 	
 	destroy: function(event)
 	{
+		this.prefs.setCharPref("lastdir", mFolder.path);
 	  window.removeEventListener("unload", this, false);
 	  this.prefs.removeObserver("",this);
 	},
