@@ -46,7 +46,7 @@
 <bindings xmlns="http://www.mozilla.org/xbl"
           xmlns:xul="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
 
-  <binding id="panel" name="panel">
+  <binding id="panel" name="panel" extends="xul:scrollbox">
 
     <content>
     	<xul:grid flex="1">
@@ -70,10 +70,18 @@
     				this.removeChild(this.firstChild);
     			}
     			
+    			const XMLNS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
+    			
+    			var column;
     			for (var col = 0; col<this._columns; col++)
     			{
-    				var column = document.createElementNS("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul", "column");
-    				column.setAttribute("flex", "1");
+    				if (col != 0)
+    				{
+	    				column = document.createElementNS(XMLNS, "column");
+	    				column.setAttribute("flex", "1");
+	    				this.appendChild(column);
+    				}
+    				column = document.createElementNS(XMLNS, "column");
     				this.appendChild(column);
     			}
     			
@@ -86,13 +94,26 @@
     			{
     				if (col == 0)
     				{
-    					row = document.createElementNS("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul", "row");
+    					row = document.createElementNS(XMLNS, "row");
     					this.appendChild(row);
     				}
-    				var thumbnail = document.createElementNS("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul", "thumbnail");
-    				thumbnail.setAttribute("style", "-moz-binding: url(chrome://imagebrowser/content/viewers/thumbnailgrid/panel.xml#thumbnail)");
+    				else
+    				{
+    					var box = document.createElementNS(XMLNS, "spacer");
+    					row.appendChild(box);
+    				}
+    				var thumbnail = document.createElementNS(XMLNS, "thumbnail");
     				thumbnail.setAttribute("file", ios.newFileURI(entries[i]).spec);
     				row.appendChild(thumbnail);
+    				col = (col + 1) % this._columns;
+    			}
+    			
+    			while (col > 0)
+    			{
+   					var box = document.createElementNS(XMLNS, "spacer");
+   					row.appendChild(box);
+   					box = document.createElementNS(XMLNS, "spacer");
+   					row.appendChild(box);
     				col = (col + 1) % this._columns;
     			}
     		]]>
@@ -117,12 +138,12 @@
 	<binding id="thumbnail" name="thumbnail">
 	
 		<content orient="vertical" align="center">
-			<xul:vbox align="center">
+			<xul:button orient="vertical" align="center">
 				<xul:box orient="vertical" align="center" pack="center">
 					<xul:image anonid="thumbnail"/>
 				</xul:box>
 				<xul:label anonid="name" crop="end"/>
-			</xul:vbox>
+			</xul:button>
 		</content>
 		
 		<implementation>

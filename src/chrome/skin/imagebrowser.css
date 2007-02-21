@@ -4,3 +4,12 @@
 #display-deck {
 	background-color: window;
 }
+
+#thumbnailgrid-panel {
+	-moz-binding: url(chrome://imagebrowser/content/viewers/thumbnailgrid/panel.xml#panel);
+	overflow: auto;
+}
+
+#thumbnailgrid-panel thumbnail {
+	-moz-binding: url(chrome://imagebrowser/content/viewers/thumbnailgrid/panel.xml#thumbnail);
+}
