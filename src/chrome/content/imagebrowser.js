@@ -175,17 +175,22 @@ var ImageBrowser = {
 	  window.addEventListener("unload", this, false);
 	  window.removeEventListener("load", this, false);
 
-		var dbfile = Components.classes["@mozilla.org/file/directory_service;1"]
-		                       .getService(Components.interfaces.nsIProperties)
-		                       .get("ProfD", Components.interfaces.nsIFile);
-		dbfile.append("cache.sqlite");
-		var createtables = !dbfile.exists();
-		
-		var storageService = Components.classes["@mozilla.org/storage/service;1"]
-		                               .getService(Components.interfaces.mozIStorageService);
-		this.cache = storageService.openDatabase(dbfile);
-		if (createtables)
-			this.initialiseCache();
+		if (Components.classes["@mozilla.org/storage/service;1"])
+		{
+			var dbfile = Components.classes["@mozilla.org/file/directory_service;1"]
+			                       .getService(Components.interfaces.nsIProperties)
+			                       .get("ProfD", Components.interfaces.nsIFile);
+			dbfile.append("cache.sqlite");
+			var createtables = !dbfile.exists();
+			
+			var storageService = Components.classes["@mozilla.org/storage/service;1"]
+			                               .getService(Components.interfaces.mozIStorageService);
+			this.cache = storageService.openDatabase(dbfile);
+			if (createtables)
+				this.initialiseCache();
+		}
+		else
+			this.logWarning("Warning, no storage service available. Nothing will be cached.");
 		
 		if (this.prefs.prefHasUserValue("lastdir"))
 		{
@@ -197,7 +202,16 @@ var ImageBrowser = {
 			mFolder = Components.classes["@mozilla.org/file/directory_service;1"]
 			                    .getService(Components.interfaces.nsIProperties)
 			                    .get("Home", Components.interfaces.nsIFile);
+
+		var ios = Components.classes["@mozilla.org/network/io-service;1"]
+                        .getService(Components.interfaces.nsIIOService);
+    var rdfs = Components.classes["@mozilla.org/rdf/rdf-service;1"]
+                         .getService(Components.interfaces.nsIRDFService);
 		document.getElementById("folder-statusbarpanel").label = mFolder.path;
+		var treeview = document.getElementById("folder-tree").view
+		                       .QueryInterface(Components.interfaces.nsIXULTreeBuilder);
+		var resource = rdfs.GetResource(ios.newFileURI(mFolder).spec);
+		treeview.currentIndex = treeview.getIndexOfResource(resource);
 		
 		if ("initialise" in mDisplayPanel)
 			mDisplayPanel.initialise();
@@ -334,15 +348,19 @@ var ImageBrowser = {
 		
 		ProgressHandler.completeOperation(10);
 		callback(url, canvas.width, canvas.height);
-		var stmt = this.cache.createStatement("INSERT OR REPLACE INTO Thumbnail (file,size,date,uri,width,height) VALUES (?1,?2,?3,?4,?5,?6);");
-		stmt.bindStringParameter(0, file.path);
-		stmt.bindInt32Parameter(1, size);
-		stmt.bindInt64Parameter(2, Date.now());
-		stmt.bindStringParameter(3, url);
-		stmt.bindInt32Parameter(4, canvas.width);
-		stmt.bindInt32Parameter(5, canvas.height);
-		stmt.execute();
-		stmt.reset();
+		
+		if (this.cache)
+		{
+			var stmt = this.cache.createStatement("INSERT OR REPLACE INTO Thumbnail (file,size,date,uri,width,height) VALUES (?1,?2,?3,?4,?5,?6);");
+			stmt.bindStringParameter(0, file.path);
+			stmt.bindInt32Parameter(1, size);
+			stmt.bindInt64Parameter(2, Date.now());
+			stmt.bindStringParameter(3, url);
+			stmt.bindInt32Parameter(4, canvas.width);
+			stmt.bindInt32Parameter(5, canvas.height);
+			stmt.execute();
+			stmt.reset();
+		}
 		
 		if ((this.scalings <= this.maxScalings) && (this.scaleQueue.length > 0))
 		{
@@ -364,12 +382,15 @@ var ImageBrowser = {
 	
 	loadThumbnailForFile: function(file, size, callback)
 	{
-		var stmt = this.cache.createStatement("SELECT uri,width,height FROM Thumbnail WHERE file=?1 AND size=?2 AND date>?3");
-		stmt.bindStringParameter(0, file.path);
-		stmt.bindInt32Parameter(1, size);
-		stmt.bindInt64Parameter(2, file.lastModifiedTime);
+		if (this.cache)
+		{
+			var stmt = this.cache.createStatement("SELECT uri,width,height FROM Thumbnail WHERE file=?1 AND size=?2 AND date>?3");
+			stmt.bindStringParameter(0, file.path);
+			stmt.bindInt32Parameter(1, size);
+			stmt.bindInt64Parameter(2, file.lastModifiedTime);
+		}
 		
-		if (stmt.executeStep())
+		if (this.cache && stmt.executeStep())
 		{
 			var url = stmt.getString(0);
 			var width = stmt.getInt32(1);
