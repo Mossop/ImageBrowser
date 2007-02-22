@@ -17,3 +17,7 @@
 #thumbnailgrid-panel thumbnail {
 	-moz-binding: url(chrome://imagebrowser/content/viewers/thumbnailgrid/panel.xml#thumbnail);
 }
+
+#thumbnailgrid-panel vbox[anonid="container"] {
+	padding: 5px 0px 5px 0px;
+}

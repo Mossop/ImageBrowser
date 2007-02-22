@@ -64,7 +64,9 @@
     <implementation implements="nsITimerCallback">
 
       <field name="_rebuildTimer">null</field>
-
+			<field name="_columns">0</field>
+			<field name="_scrollbar">null</field>
+			
     	<method name="_rebuild">
     		<body>
     		<![CDATA[
@@ -73,8 +75,15 @@
     			
    				var scrollbox = document.getAnonymousElementByAttribute(this, "anonid", "scrollbox");
    				var viewwidth = {};
-   				scrollbox.boxObject.QueryInterface(Components.interfaces.nsIScrollBoxObject).getScrolledSize(viewwidth, {});
-   				if (viewwidth.value == 0)
+
+   				if (this._scrollbar)
+	   				viewwidth.value = scrollbox.boxObject.width - this._scrollbar;
+	   			else
+	   				scrollbox.boxObject.QueryInterface(Components.interfaces.nsIScrollBoxObject).getScrolledSize(viewwidth, {});
+
+					ImageBrowser.logMessage("Width: "+viewwidth.value);
+					
+   				if (viewwidth.value <= 0)
    				{
    					if (!this._rebuildTimer)
    					{
@@ -88,6 +97,12 @@
    				{
    					this._rebuildTimer.cancel();
    					this._rebuildTimer = null;
+   				}
+   				
+   				if (!this._scrollbar)
+   				{
+   					this._scrollbar = scrollbox.boxObject.width - viewwidth.value;
+   					ImageBrowser.logMessage("Scrollbar width is "+this._scrollbar);
    				}
 
     			const XMLNS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
@@ -110,9 +125,9 @@
    				
    				var width = parseInt(window.getComputedStyle(thumbnail, null).width);
    				
-   				var columns = Math.floor(viewwidth.value/width);
+   				this._columns = Math.floor(viewwidth.value/width);
     			
-    			for (var col = 1; col < columns; col++)
+    			for (var col = 1; col < this._columns; col++)
     			{
     				column = document.createElementNS(XMLNS, "column");
     				column.setAttribute("flex", "1");
@@ -122,7 +137,7 @@
     				this.appendChild(column);
     			}
     			
-    			var col = 1 % columns;
+    			var col = 1 % this._columns;
     			for (var i=1; i<entries.length; i++)
     			{
     				if (col == 0)
@@ -138,7 +153,7 @@
     				var thumbnail = document.createElementNS(XMLNS, "thumbnail");
     				thumbnail.setAttribute("file", ios.newFileURI(entries[i]).spec);
     				row.appendChild(thumbnail);
-    				col = (col + 1) % columns;
+    				col = (col + 1) % this._columns;
     			}
     			
     			while (col > 0)
@@ -147,9 +162,31 @@
    					row.appendChild(box);
    					box = document.createElementNS(XMLNS, "spacer");
    					row.appendChild(box);
-    				col = (col + 1) % columns;
+    				col = (col + 1) % this._columns;
     			}
     		]]>
+    		</body>
+    	</method>
+    	
+    	<method name="onResized">
+    		<body>
+   				var scrollbox = document.getAnonymousElementByAttribute(this, "anonid", "scrollbox");
+   				var viewwidth = {};
+
+   				if (this._scrollbar)
+	   				viewwidth.value = scrollbox.boxObject.width - this._scrollbar;
+	   			else
+	   				scrollbox.boxObject.QueryInterface(Components.interfaces.nsIScrollBoxObject).getScrolledSize(viewwidth, {});
+
+					if (viewwidth.value >= 0)
+					{
+	   				var width = parseInt(window.getComputedStyle(this.firstChild.nextSibling.firstChild, null).width);
+	   				
+	   				var columns = Math.floor(viewwidth.value/width);
+	
+						if (columns != this._columns)
+		    			this._rebuild();
+		    	}
     		</body>
     	</method>
     	
@@ -180,10 +217,15 @@
 	
 		<content orient="vertical" align="center">
 			<xul:button orient="vertical" align="center">
-				<xul:box orient="vertical" align="center" pack="center">
-					<xul:image anonid="thumbnail"/>
-				</xul:box>
-				<xul:label anonid="name" crop="end"/>
+				<xul:vbox anonid="container" align="stretch">
+					<xul:vbox align="center">
+						<xul:stack>
+							<xul:image anonid="thumbnail" top="0" left="0"/>
+							<xul:image anonid="icon" top="0" left="0"/>
+						</xul:stack>
+					</xul:vbox>
+					<xul:label anonid="name" style="text-align: center" crop="end"/>
+				</xul:vbox>
 			</xul:button>
 		</content>
 		
@@ -197,15 +239,17 @@
 		                 .QueryInterface(Components.interfaces.nsIFileProtocolHandler);
 				this._file = fph.getFileFromURLSpec(this.getAttribute("file"));
 
+				var icon = document.getAnonymousElementByAttribute(this, "anonid", "icon");
+				icon.src = "moz-icon"+this.getAttribute("file").substr(4);
 				var label = document.getAnonymousElementByAttribute(this, "anonid", "name");
 				label.value = this._file.leafName
 				var size = ImageBrowser.getThumbnailSize();
 				var box = document.getAnonymousElementByAttribute(this, "anonid", "thumbnail").parentNode;
 				box.width = size;
-				box.height = size;
-				box.parentNode.width = size*1.25;
-				var self = this;
+				box.parentNode.parentNode.width = size+10;
+
 				ProgressHandler.addOperation(1);
+				var self = this;
 				ImageBrowser.loadThumbnailForFile(this._file, ImageBrowser.getThumbnailSize(), function(uri, width, height) { self.onThumbnailLoaded(uri, width, height) });
 			</constructor>
 			
@@ -214,14 +258,19 @@
 				<parameter name="width"/>
 				<parameter name="height"/>
 				<body>
+				<![CDATA[
 					if (this.parentNode && this.parentNode.parentNode)
 					{
+						var size = ImageBrowser.getThumbnailSize();
 						var thumbnail = document.getAnonymousElementByAttribute(this, "anonid", "thumbnail");
-						thumbnail.src = uri;
 						thumbnail.width = width;
 						thumbnail.height = height;
+						thumbnail.setAttribute("left", Math.floor((size - width) / 2));
+						thumbnail.setAttribute("top", Math.floor((size - height) / 2));
+						thumbnail.src = uri;
 						ProgressHandler.completeOperation(1);
 					}
+				]]>
 				</body>
 			</method>
 		</implementation>

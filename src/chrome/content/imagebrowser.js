@@ -173,6 +173,7 @@ var ImageBrowser = {
 
 	  this.prefs.addObserver("",this,false);
 	  window.addEventListener("unload", this, false);
+	  window.addEventListener("resize", this, false);
 	  window.removeEventListener("load", this, false);
 
 		if (Components.classes["@mozilla.org/storage/service;1"])
@@ -221,7 +222,10 @@ var ImageBrowser = {
 	destroy: function(event)
 	{
 		this.prefs.setCharPref("lastdir", mFolder.path);
+		if ("destroy" in mDisplayPanel)
+			mDisplayPanel.destroy();
 	  window.removeEventListener("unload", this, false);
+	  window.removeEventListener("resize", this, false);
 	  this.prefs.removeObserver("",this);
 	},
 	
@@ -311,6 +315,11 @@ var ImageBrowser = {
   changeSortOrder: function(order)
   {
   	this.prefs.setCharPref("sortorder", order);
+  },
+  
+  onResizeDisplay: function()
+  {
+  	mDisplayPanel.onResized();
   },
   
 	onFolderSelect: function()
@@ -427,6 +436,7 @@ var ImageBrowser = {
 		tree.nextSibling.hidden = tree.hidden;
 		var menu = document.getElementById("folderlist-menuitem");
 		menu.setAttribute("checked", tree.hidden ? "false" : "true");
+		this.onResizeDisplay();
 	},
 	
 	showAbout: function()
@@ -473,7 +483,7 @@ var ImageBrowser = {
 		
 		if ("initialise" in mDisplayPanel)
 			mDisplayPanel.initialise();
-		mDisplayPanel.setFolder(mFolder);
+		mDisplayPanel.setFolder();
 	},
 
 	observe: function (subject, topic, data)
@@ -516,6 +526,9 @@ var ImageBrowser = {
 				break;
 			case "unload":
 				this.destroy();
+				break;
+			case "resize":
+				this.onResizeDisplay();
 				break;
 		}
 	}

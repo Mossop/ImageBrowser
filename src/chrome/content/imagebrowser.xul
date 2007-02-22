@@ -131,7 +131,8 @@
 	      </rule>
 	    </template>
 		</tree>
-		<splitter id="folder-splitter" resizebefore="closest" persist="hidden"/>
+		<splitter id="folder-splitter" resizebefore="closest" persist="hidden"
+		          oncommand="ImageBrowser.onResizeDisplay()"/>
 		<deck id="display-deck" selectedIndex="0" flex="1">
 		</deck>
 	</hbox>
