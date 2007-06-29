@@ -1,0 +1,266 @@
+ <!-- ***** BEGIN LICENSE BLOCK *****
+   - Version: MPL 1.1/GPL 2.0/LGPL 2.1
+   -
+   - The contents of this file are subject to the Mozilla Public License Version
+   - 1.1 (the "License"); you may not use this file except in compliance with
+   - the License. You may obtain a copy of the License at
+   - http://www.mozilla.org/MPL/
+   -
+   - Software distributed under the License is distributed on an "AS IS" basis,
+   - WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+   - for the specific language governing rights and limitations under the
+   - License.
+   -
+   - The Original Code is Universal XUL App Build Script.
+   -
+   - The Initial Developer of the Original Code is
+   -     Dave Townsend <dave.townsend@blueprintit.co.uk>.
+   -
+   - Portions created by the Initial Developer are Copyright (C) 2006
+   - the Initial Developer. All Rights Reserved.
+   -
+   - Contributor(s):
+   -
+   - Alternatively, the contents of this file may be used under the terms of
+   - either the GNU General Public License Version 2 or later (the "GPL"), or
+   - the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+   - in which case the provisions of the GPL or the LGPL are applicable instead
+   - of those above. If you wish to allow use of your version of this file only
+   - under the terms of either the GPL or the LGPL, and not to allow others to
+   - use your version of this file under the terms of the MPL, indicate your
+   - decision by deleting the provisions above and replace them with the notice
+   - and other provisions required by the LGPL or the GPL. If you do not delete
+   - the provisions above, a recipient may use your version of this file under
+   - the terms of any one of the MPL, the GPL or the LGPL.
+   -
+   - ***** END LICENSE BLOCK *****
+   -
+   - $HeadURL: svn://svn.blueprintit.co.uk/dave/mozilla/ExtensionBuild/trunk/build.xml $
+   - $LastChangedBy: dave $
+   - $Date: 2006-10-15 15:47:39 +0100 (Sun, 15 Oct 2006) $
+   - $Revision: 834 $
+   -->
+
+<project name="XULAppBuild" default="package" basedir="../">
+
+  <taskdef name="preprocess" classname="com.blueprintit.mossant.PreProcessTask"/>
+    
+  <property name="mozillasdk" value="${basedir}/../../gecko-sdk"/>
+
+  <property name="xptlink.bin" value="${mozillasdk}/bin/xpt_link"/>
+  <property name="xpidl.bin" value="${mozillasdk}/bin/xpidl"/>
+  <property name="xpidl.includes" value="-I ${mozillasdk}/idl"/>
+
+  <target name="_init"
+    description="Initialises all propertys to their correct values.">
+    
+    <!-- Load the basic properties -->
+    <property file="${properties}"/>
+    
+    <!-- Load the extension properties -->
+    <property file="${basedir}/application.properties" prefix="application"/>
+
+    <!-- Set suitable defaults in case there was no settings -->
+    <property name="srcdir" value="${basedir}/src"/>
+    <property name="builddir" value="${basedir}/prebuild"/>
+    <property name="bindir" value="${basedir}/bin"/>
+    <property name="outputdir" value="${basedir}"/>
+    
+  	<tstamp>
+  		<format property="application.buildid" pattern="yyyyMMddHHmm"/>
+  	</tstamp>
+  	
+    <!-- If a revision is specified then add that to the extension version -->
+    <condition property="application.fullversion" value="${application.version}.${application.revision}" else="${application.version}">
+      <isset property="application.revision"/>
+    </condition>
+    
+    <!-- Release builds have their version in their package name -->
+    <condition property="packagename" value="${application.name}-${application.version}" else="${application.name}">
+      <isset property="release"/>
+    </condition>
+
+    <!-- Define the chrome base url which changes if a jar file is in use or not -->
+    <condition property="application.chromebase" value="jar:${application.chromejar}.jar!" else="file:">
+      <isset property="application.chromejar"/>
+    </condition>
+
+    <!-- Create the build directory and check if there are any components -->
+    <mkdir dir="${builddir}"/>
+    <available property="hascomponents" file="${srcdir}/components"/>
+    
+    <!-- Dump out properties so we know the state of a failed build -->
+    <echoproperties/>
+  </target>
+  
+  <target name="_copy"
+    description="Copies all standard files to the build directory">
+    
+    <copy todir="${builddir}">
+      <fileset dir="${srcdir}" excludesfile="${builddir}/.excludes">
+        <exclude name="**/*.pspimage"/>             <!-- These are likely to be high quality images -->
+        <exclude name="**/Thumbs.db"/>              <!-- Don't want windows files -->
+        <exclude name=".*"/>                        <!-- No unix hidden files -->
+        <exclude name="components/*.idl"/>          <!-- These are headers to be compiled by xpidl -->
+        <exclude name=".excludes"/>
+
+        <exclude name="**/*.inc"/>                  <!-- Included files should be taken by the preprocessor -->
+        <exclude name="**/*.inc.*"/>                <!-- Included files should be taken by the preprocessor -->
+      </fileset>
+    </copy>
+  </target>
+  
+  <target name="_preprocess"
+    description="Preprocesses any necessary input files">
+    
+    <preprocess destdir="${builddir}" overwrite="true">
+      <fileset dir="${srcdir}" excludesfile="${builddir}/.excludes">
+        <exclude name="**/*.inc"/>
+        <exclude name="**/*.inc.*"/>
+        <exclude name=".excludes"/>
+
+        <include name="**/*.js"/>
+        <include name="**/*.xul"/>
+        <include name="**/*.xml"/>
+        <include name="**/*.rdf"/>
+        <include name="**/*.manifest"/>
+        <include name="**/*.ini"/>
+      </fileset>
+    </preprocess>
+  </target>
+  
+  <target name="_compileXPT" if="hascomponents"
+    description="Compiles any idl files to xpt">
+  
+  	<mkdir dir="${bindir}/components"/>
+  	
+    <apply executable="${xpidl.bin}" dir="${srcdir}/components" dest="${builddir}/components" failonerror="true">
+      <mapper type="glob" from="*.idl" to="*.xpt"/>
+      <fileset dir="${srcdir}/components" includes="*.idl"/>
+      <arg line="-m typelib -w -v"/>
+      <arg line="${xpidl.includes} -e"/>
+      <targetfile/>
+    </apply>
+  </target>
+  
+  <!-- Either combine all xpt's into one or copy them all across -->
+  
+  <target name="_combineXPT" if="application.globalxpt"
+    description="Combines all xpt files into a single one.">
+  
+  	<mkdir dir="${bindir}/components"/>
+  	
+    <apply executable="${xptlink.bin}" failonerror="true" parallel="true">
+      <fileset dir="${builddir}/components" includes="*.xpt" excludes="${application.globalxpt}.xpt"/>
+      <arg line="${bindir}/components/${application.globalxpt}.xpt"/>
+    </apply>
+  </target>
+  
+  <target name="_copyXPT" unless="application.globalxpt"
+    description="Copies all XPT files to the output dir.">
+  
+    <copy todir="${bindir}/components">
+      <fileset dir="${builddir}/components" includes="*.xpt"/>
+    </copy>
+  </target>
+  
+  <!-- These either create a jar from the chrome, or copy straight it across to the output -->
+  
+  <target name="_buildJAR" if="application.chromejar"
+    description="Compiles the chrome into a single jar file.">
+    
+  	<mkdir dir="${bindir}/chrome"/>
+  	
+    <!-- Assume this dir is clean so zip up everything except the jar file itself. -->
+    <zip basedir="${builddir}/chrome" destfile="${bindir}/chrome/${application.chromejar}.jar" compress="false">
+      <exclude name="${application.chromejar}.jar"/>
+    	<exclude name="*.manifest"/>
+    	<exclude name="icons/**/*"/>
+    </zip>
+
+    <copy todir="${builddir}">
+      <fileset dir="${builddir}/chrome">
+        <include name="*.manifest"/>
+      	<include name="icons/**/*"/>
+      </fileset>
+    </copy>
+  </target>
+  
+  <target name="_copyChrome" unless="application.chromejar"
+    description="Copies the chrome into the bindir.">
+    
+    <mkdir dir="${bindir}/chrome"/>
+  	
+    <copy todir="${bindir}/chrome">
+      <fileset dir="${builddir}/chrome"/>
+    </copy>
+  </target>
+  
+  <!-- Dummy targets that perform the work -->
+  
+  <target name="_prepare"
+    description="Dummy task that uses the build dir to prepare all the files.">
+    
+    <mkdir dir="${builddir}"/>
+    <preprocess destdir="${builddir}" overwrite="true">
+      <fileset dir="${srcdir}">
+        <include name=".excludes"/>
+      </fileset>
+    </preprocess>
+    <touch file="${builddir}/.excludes"/>
+    
+    <antcall target="_preprocess"/>
+    <antcall target="_copy"/>
+    <antcall target="_compileXPT"/>
+  </target>
+  
+  <target name="_completeComponents" if="hascomponents"
+    description="Dummy task that compiles any necessary components.">
+    <antcall target="_combineXPT"/>
+    <antcall target="_copyXPT"/>
+  </target>
+  
+  <target name="_complete"
+    description="Dummy task that moves from the build dir to the bindir.">
+
+    <antcall target="_buildJAR"/>
+    <antcall target="_copyChrome"/>
+    <antcall target="_completeComponents"/>
+
+    <copy todir="${bindir}">
+      <fileset dir="${builddir}">
+      	<exclude name="components/*.xpt"/>
+      	<exclude name="chrome/**/*"/>
+        <exclude name=".excludes"/>
+      </fileset>
+    </copy>
+  </target>
+  
+  <target name="compile" depends="_init"
+    description="Dummy task that performs everything necessary to make the build directory a working extension.">
+
+    <antcall target="_prepare"/>
+    <antcall target="_complete"/>
+  </target>
+  
+  <target name="package" depends="_init,compile"
+    description="Packages the extension into an xpi file.">
+
+  	<loadfile property="comment" srcFile="${bindir}/LICENSE" failonerror="false"/>
+  	<property name="comment" value=""/>
+    <zip basedir="${bindir}" destfile="${outputdir}/${packagename}.xulapp" comment="${comment}"/>
+  </target>
+  
+  <target name="clean" depends="_init"
+    description="Cleans the build directory and output package">
+
+    <delete dir="${builddir}"/>
+    <delete dir="${bindir}"/>
+    <delete file="${outputdir}/${packagename}.xulapp"/>
+  </target>
+  
+  <target name="clean-package" depends="_init,clean,package"
+    description="A single target that will clean then build the package. Stops running the init target twice.">
+  </target>
+  
+</project>
